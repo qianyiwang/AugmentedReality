@@ -36,7 +36,7 @@ import java.util.List;
 
 public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBase.CvCameraViewListener2{
 
-    Mat mRgba, templ;
+    Mat mRgba, templ1, templ2, templ3;
     Size newSize;
     BaseLoaderCallback baseLoaderCallback;
     final String TAG = "ArDisplayView2";
@@ -95,93 +95,81 @@ public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBa
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
+        templ1 = Imgcodecs.imread("/sdcard/Pictures/steeringwheel2.JPG");
+        templ2 = Imgcodecs.imread("/sdcard/Pictures/mcs2.JPG");
+//        templ3 = Imgcodecs.imread("/sdcard/Pictures/templ.JPG");
 
-//        Log.e(TAG, GlobalValues.template_idx+"");
+        Mat[] templs = {templ1, templ2};
 
-        switch (GlobalValues.template_idx){
-            case 0:
-                templ = Imgcodecs.imread("/sdcard/Pictures/steeringwheel.JPG");
-                GlobalValues.display_message = "STEERING WHEEL";
-                break;
-            case 1:
-                templ = Imgcodecs.imread("/sdcard/Pictures/mcs.JPG");
-                GlobalValues.display_message = "MCS";
-                break;
-            case 2:
-                templ = Imgcodecs.imread("/sdcard/Pictures/templ.JPG");
-                GlobalValues.display_message = "FORD UM Dearborn Label";
-                break;
+        int[] matchVal = drawFeatureMatches(mRgba, templs);
+
+        if(matchVal[0]>=matchVal[1]){
+            broadCastIntent.putExtra("match_info", 0+","+matchVal[0]);
+            mContext.sendBroadcast(broadCastIntent);
+        }
+        else{
+            broadCastIntent.putExtra("match_info", 1+","+matchVal[1]);
+            mContext.sendBroadcast(broadCastIntent);
         }
 
-        drawFeatureMatches(mRgba, templ);
         return mRgba;
     }
 
-    private void drawFeatureMatches(Mat frame, Mat img2){
+    private int[] drawFeatureMatches(Mat frame, Mat[] templs){
+
+        int[] matchVal = new int[templs.length];
+
         FeatureDetector detector = FeatureDetector.create(FeatureDetector.ORB);
         DescriptorExtractor descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE);
 
         //first image
         Mat img1 = frame;
-//        Imgproc.cvtColor(img1, img1, CV_8U);
         Mat descriptors1 = new Mat();
         MatOfKeyPoint keypoints1 = new MatOfKeyPoint();
         detector.detect(img1, keypoints1);
         descriptor.compute(img1, keypoints1, descriptors1);
 
-        //second image
-//        Mat img2 = Imgcodecs.imread("/sdcard/Pictures/templ.jpg");
-        Mat descriptors2 = new Mat();
-        MatOfKeyPoint keypoints2 = new MatOfKeyPoint();
-        detector.detect(img2, keypoints2);
-        descriptor.compute(img2, keypoints2, descriptors2);
-
-        //matcher image descriptors
-        MatOfDMatch matches = new MatOfDMatch();
-        matcher.match(descriptors1,descriptors2,matches);
-
-        // calculate total number of matches and good matches
-        double max_dist = 0;
-        double min_dist = 100;
-
-        List<DMatch> matchesList = matches.toList();
-
         // Quick calculation of max and min distances between keypoints
-        try{
-            for( int i = 0; i < descriptors2.rows(); i++ ) {
-                double dist = matchesList.get(i).distance;
-                if( dist < min_dist ) min_dist = dist;
-                if( dist > max_dist ) max_dist = dist;
+
+        for (int j=0; j<templs.length; j++){
+
+            //template image
+            Mat descriptors2 = new Mat();
+            MatOfKeyPoint keypoints2 = new MatOfKeyPoint();
+            detector.detect(templs[j], keypoints2);
+            descriptor.compute(templs[j], keypoints2, descriptors2);
+
+
+            //matcher image descriptors
+            MatOfDMatch matches = new MatOfDMatch();
+            matcher.match(descriptors1,descriptors2,matches);
+
+            // calculate total number of matches and good matches
+            double max_dist = 0;
+            double min_dist = 100;
+
+            List<DMatch> matchesList = matches.toList();
+
+            try{
+                for( int i = 0; i < descriptors2.rows(); i++ ) {
+                    double dist = matchesList.get(i).distance;
+                    if( dist < min_dist ) min_dist = dist;
+                    if( dist > max_dist ) max_dist = dist;
+                }
+
+                // calculate good matches
+                LinkedList<DMatch> good_matches = new LinkedList<DMatch>();
+                for( int i = 0; i < descriptors2.rows(); i++ )
+                    if( matchesList.get(i).distance <= 3*min_dist ) good_matches.addLast( matchesList.get(i));
+
+                matchVal[j] = good_matches.size();
             }
+            catch (Exception e){
 
-            // calculate good matches
-            LinkedList<DMatch> good_matches = new LinkedList<DMatch>();
-            for( int i = 0; i < descriptors2.rows(); i++ )
-                if( matchesList.get(i).distance <= 3*min_dist ) good_matches.addLast( matchesList.get(i));
-
-            KeyPoint[] kp = keypoints1.toArray();
-            double x=0, y=0;
-            ArrayList<Double> xList = new ArrayList<>();
-            ArrayList<Double> yList = new ArrayList<>();
-            for(int i = 0; i<good_matches.size(); i++){
-                int idx = good_matches.get(i).queryIdx;
-                x = kp[idx].pt.x;
-                y = kp[idx].pt.y;
-                xList.add(x);
-                yList.add(y);
             }
-            Collections.sort(xList);
-            Collections.sort(yList);
-
-            int xIdx = (int) Math.floor(xList.size()/2);
-            int yIdx = (int) Math.floor(yList.size()/2);
-            broadCastIntent.putExtra("match_info", good_matches.size()+","+xList.get(xIdx)+","+yList.get(yIdx));
-//            broadCastIntent.putExtra("match_info", good_matches.size());
-            mContext.sendBroadcast(broadCastIntent);
         }
-        catch (Exception e){
 
-        }
+        return matchVal;
     }
 }

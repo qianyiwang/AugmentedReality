@@ -7,32 +7,6 @@
     android:orientation="vertical"
     tools:context="com.example.qianyiwang.augmentedrealitytest.MainActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/steering_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Steering Wheel"/>
-
-        <Button
-            android:id="@+id/mcs_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MCS"/>
-
-        <Button
-            android:id="@+id/label_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="LABEL"/>
-
-    </LinearLayout>
-
-
     <FrameLayout
         android:id="@+id/container"
         android:layout_width="match_parent"
