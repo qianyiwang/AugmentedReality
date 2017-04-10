@@ -160,26 +160,24 @@ public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBa
             for( int i = 0; i < descriptors2.rows(); i++ )
                 if( matchesList.get(i).distance <= 3*min_dist ) good_matches.addLast( matchesList.get(i));
 
-//            Log.e("good match", good_matches.size()+"");
+            KeyPoint[] kp = keypoints1.toArray();
+            double x=0, y=0;
+            ArrayList<Double> xList = new ArrayList<>();
+            ArrayList<Double> yList = new ArrayList<>();
+            for(int i = 0; i<good_matches.size(); i++){
+                int idx = good_matches.get(i).queryIdx;
+                x = kp[idx].pt.x;
+                y = kp[idx].pt.y;
+                xList.add(x);
+                yList.add(y);
+            }
+            Collections.sort(xList);
+            Collections.sort(yList);
 
-//            KeyPoint[] kp = keypoints1.toArray();
-//            double x=0, y=0;
-//            ArrayList<Double> xList = new ArrayList<>();
-//            ArrayList<Double> yList = new ArrayList<>();
-//            for(int i = 0; i<good_matches.size(); i++){
-//                int idx = good_matches.get(i).queryIdx;
-//                x = kp[idx].pt.x;
-//                y = kp[idx].pt.y;
-//                xList.add(x);
-//                yList.add(y);
-//            }
-//            Collections.sort(xList);
-//            Collections.sort(yList);
-//
-//            int xIdx = (int) Math.floor(xList.size()/2);
-//            int yIdx = (int) Math.floor(yList.size()/2);
-//            broadCastIntent.putExtra("match_info", good_matches.size()+","+xList.get(xIdx)+","+yList.get(yIdx));
-            broadCastIntent.putExtra("match_info", good_matches.size());
+            int xIdx = (int) Math.floor(xList.size()/2);
+            int yIdx = (int) Math.floor(yList.size()/2);
+            broadCastIntent.putExtra("match_info", good_matches.size()+","+xList.get(xIdx)+","+yList.get(yIdx));
+//            broadCastIntent.putExtra("match_info", good_matches.size());
             mContext.sendBroadcast(broadCastIntent);
         }
         catch (Exception e){

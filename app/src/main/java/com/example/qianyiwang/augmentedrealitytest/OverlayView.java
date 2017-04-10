@@ -17,7 +17,9 @@ import android.view.View;
 public class OverlayView extends View{
 
     BroadcastReceiver broadcastReceiver;
+    String match_info;
     int match_count;
+    float x,y;
 
     public OverlayView(Context context) {
         super(context);
@@ -25,7 +27,10 @@ public class OverlayView extends View{
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                match_count = intent.getIntExtra("match_info", 0);
+                match_info = intent.getStringExtra("match_info");
+                match_count = Integer.parseInt(match_info.split(",")[0]);
+                x = Float.parseFloat(match_info.split(",")[1]);
+                y = Float.parseFloat(match_info.split(",")[2]);
                 invalidate();
             }
         };
@@ -45,12 +50,12 @@ public class OverlayView extends View{
         focusPaint.setColor(Color.YELLOW);
         focusPaint.setStrokeWidth(10);
 
-        canvas.drawText(match_count+"", 60, 60, contentPaint);
+        canvas.drawText(match_count+","+x+","+y, 100, 60, contentPaint);
         if(match_count>90){
-            canvas.drawCircle(canvas.getWidth()/2, canvas.getHeight()/2, 30, focusPaint);
-            canvas.drawText(GlobalValues.display_message, canvas.getWidth()*4/5-50, canvas.getHeight()*2/5-20, contentPaint);
-            canvas.drawLine(canvas.getWidth()/2, canvas.getHeight()/2, canvas.getWidth()*3/5, canvas.getHeight()*2/5, focusPaint);
-            canvas.drawLine(canvas.getWidth()*3/5, canvas.getHeight()*2/5, canvas.getWidth()*4/5, canvas.getHeight()*2/5, focusPaint);
+            canvas.drawCircle(x, y, 30, focusPaint);
+            canvas.drawText(GlobalValues.display_message, x+500-50, y-100-20, contentPaint);
+            canvas.drawLine(x, y, x+200, y-100, focusPaint);
+            canvas.drawLine(x+200, y-100, x+500, y-100, focusPaint);
         }
     }
 }
