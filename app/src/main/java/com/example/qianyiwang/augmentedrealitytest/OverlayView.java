@@ -31,8 +31,8 @@ public class OverlayView extends View{
                 match_info = intent.getStringExtra("match_info");
                 match_idx = Integer.parseInt(match_info.split(",")[0]);
                 match_count = Integer.parseInt(match_info.split(",")[1]);
-//                x = Float.parseFloat(match_info.split(",")[1]);
-//                y = Float.parseFloat(match_info.split(",")[2]);
+                x = Float.parseFloat(match_info.split(",")[2]);
+                y = Float.parseFloat(match_info.split(",")[3]);
                 invalidate();
             }
         };
@@ -52,13 +52,13 @@ public class OverlayView extends View{
         focusPaint.setColor(Color.YELLOW);
         focusPaint.setStrokeWidth(10);
 
-        canvas.drawText(match_idx+", "+match_count,100, 60, contentPaint);
-//        if(match_count>90){
-//            canvas.drawCircle(x, y, 30, focusPaint);
-//            canvas.drawText(GlobalValues.display_message, x+500-50, y-100-20, contentPaint);
-//            canvas.drawLine(x, y, x+200, y-100, focusPaint);
-//            canvas.drawLine(x+200, y-100, x+500, y-100, focusPaint);
-//        }
+        canvas.drawText(match_idx+", "+match_count+", "+x+", "+y,200, 60, contentPaint);
+        if(match_count>90){
+            canvas.drawCircle(x, y, 30, focusPaint);
+            canvas.drawText(GlobalValues.display_message, x+500-50, y-100-20, contentPaint);
+            canvas.drawLine(x, y, x+200, y-100, focusPaint);
+            canvas.drawLine(x+200, y-100, x+500, y-100, focusPaint);
+        }
 
     }
 }

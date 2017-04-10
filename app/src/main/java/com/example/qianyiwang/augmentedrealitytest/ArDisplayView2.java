@@ -95,29 +95,36 @@ public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBa
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
-        templ1 = Imgcodecs.imread("/sdcard/Pictures/steeringwheel2.JPG");
-        templ2 = Imgcodecs.imread("/sdcard/Pictures/mcs2.JPG");
+        templ1 = Imgcodecs.imread("/sdcard/Pictures/steeringwheel3.JPG");
+        templ2 = Imgcodecs.imread("/sdcard/Pictures/mcs3.JPG");
 //        templ3 = Imgcodecs.imread("/sdcard/Pictures/templ.JPG");
+
+//        templ1 = Imgcodecs.imread("/sdcard/Download/steeringwheel3.JPG");
+//        templ2 = Imgcodecs.imread("/sdcard/Download/mcs3.JPG");
 
         Mat[] templs = {templ1, templ2};
 
-        int[] matchVal = drawFeatureMatches(mRgba, templs);
+        MatchInfo[] match_info = drawFeatureMatches(mRgba, templs);
 
-        if(matchVal[0]>=matchVal[1]){
-            broadCastIntent.putExtra("match_info", 0+","+matchVal[0]);
-            mContext.sendBroadcast(broadCastIntent);
-        }
-        else{
-            broadCastIntent.putExtra("match_info", 1+","+matchVal[1]);
-            mContext.sendBroadcast(broadCastIntent);
-        }
-
+        try{
+            if(match_info[0].match_count>=match_info[1].match_count){
+                GlobalValues.display_message = "Ford Steering Wheel";
+                broadCastIntent.putExtra("match_info", match_info[0].match_idx+","+match_info[0].match_count+","+match_info[0].center_x+","+match_info[0].center_y);
+                mContext.sendBroadcast(broadCastIntent);
+            }
+            else{
+                GlobalValues.display_message = "Ford MCS";
+                broadCastIntent.putExtra("match_info", match_info[1].match_idx+","+match_info[1].match_count+","+match_info[1].center_x+","+match_info[1].center_y);
+                mContext.sendBroadcast(broadCastIntent);
+            }
+        } catch (Exception e){}
         return mRgba;
     }
 
-    private int[] drawFeatureMatches(Mat frame, Mat[] templs){
+    private MatchInfo[] drawFeatureMatches(Mat frame, Mat[] templs){
 
         int[] matchVal = new int[templs.length];
+        MatchInfo[] matchInfos = new MatchInfo[2];
 
         FeatureDetector detector = FeatureDetector.create(FeatureDetector.ORB);
         DescriptorExtractor descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
@@ -133,6 +140,8 @@ public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBa
         // Quick calculation of max and min distances between keypoints
 
         for (int j=0; j<templs.length; j++){
+
+            MatchInfo matchInfo = new MatchInfo();
 
             //template image
             Mat descriptors2 = new Mat();
@@ -163,13 +172,39 @@ public class ArDisplayView2 extends JavaCameraView implements CameraBridgeViewBa
                 for( int i = 0; i < descriptors2.rows(); i++ )
                     if( matchesList.get(i).distance <= 3*min_dist ) good_matches.addLast( matchesList.get(i));
 
-                matchVal[j] = good_matches.size();
+                KeyPoint[] kp = keypoints1.toArray();
+                double x=0, y=0;
+                ArrayList<Double> xList = new ArrayList<>();
+                ArrayList<Double> yList = new ArrayList<>();
+                for(int i = 0; i<good_matches.size(); i++){
+                    int idx = good_matches.get(i).queryIdx;
+                    x = kp[idx].pt.x;
+                    y = kp[idx].pt.y;
+                    xList.add(x);
+                    yList.add(y);
+                }
+                Collections.sort(xList);
+                Collections.sort(yList);
+
+                int xIdx = (int) Math.floor(xList.size()/2);
+                int yIdx = (int) Math.floor(yList.size()/2);
+
+                matchInfo.match_idx = j;
+                matchInfo.match_count = good_matches.size();
+                matchInfo.center_x = xList.get(xIdx);
+                matchInfo.center_y = yList.get(yIdx);
+                matchInfos[j] = matchInfo;
             }
             catch (Exception e){
-
             }
         }
 
-        return matchVal;
+        return matchInfos;
+    }
+
+    public class MatchInfo{
+        int match_idx;
+        int match_count;
+        double center_x, center_y;
     }
 }
